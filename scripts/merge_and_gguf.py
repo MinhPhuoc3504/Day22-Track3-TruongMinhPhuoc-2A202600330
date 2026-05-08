@@ -48,14 +48,20 @@ def main():
     import torch
 
     # Step 1: load + stack SFT then DPO
+    # Step 1: load + DPO adapter
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=base, max_seq_length=max_len, dtype=None, load_in_4bit=True,
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    model = PeftModel.from_pretrained(model, args.sft_path)
-    print("Loaded SFT-mini adapter")
+    model = PeftModel.from_pretrained(model, args.dpo_path)
+    print("Loaded DPO adapter")
+
+    # Fix for "tied weights" issue mentioned in README.md
+    if hasattr(model.config, "tie_word_embeddings"):
+        model.config.tie_word_embeddings = False
+        print("Set tie_word_embeddings = False to prevent merge failure")
 
     # Step 2: save merged FP16
     model.save_pretrained_merged(

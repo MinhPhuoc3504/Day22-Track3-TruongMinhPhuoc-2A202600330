@@ -67,8 +67,15 @@ if tokenizer.pad_token is None:
 
 # Stack SFT-mini → DPO adapters
 SFT_PATH = REPO_ROOT / "adapters" / "sft-mini"
+DPO_PATH = REPO_ROOT / "adapters" / "dpo"
 model = PeftModel.from_pretrained(model, str(SFT_PATH))
-print(f"Loaded SFT-mini adapter from {SFT_PATH}")
+model = PeftModel.from_pretrained(model, str(DPO_PATH))
+print(f"Loaded stacked adapters: SFT-mini + DPO")
+
+# Fix for "tied weights" issue mentioned in README.md
+if hasattr(model.config, "tie_word_embeddings"):
+    model.config.tie_word_embeddings = False
+    print("Set tie_word_embeddings = False to prevent merge failure")
 
 # %% [markdown]
 # > **Note:** The DPO adapter trained in NB3 stacks on top of SFT. To get a fully
